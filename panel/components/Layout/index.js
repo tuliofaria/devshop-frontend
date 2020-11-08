@@ -37,6 +37,9 @@ const Layout = ({ children }) => {
             <Menu.NavItem href='/categories' Icon={MdLabel}>
               Categorias
             </Menu.NavItem>
+            <Menu.NavItem href='/products' Icon={MdLabel}>
+              Produtos
+            </Menu.NavItem>
           </Menu.Nav>
         </div>
         <div className='flex-1 flex flex-col overflow-hidden'>

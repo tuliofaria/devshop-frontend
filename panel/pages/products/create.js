@@ -6,13 +6,16 @@ import { useFormik } from 'formik'
 import { useRouter } from 'next/router'
 import Button from '../../components/Button'
 import Input from '../../components/Input'
+import Select from '../../components/Select'
 import * as Yup from 'yup'
 
-const CREATE_CATEGORY = `
-    mutation createCategory($name: String!, $slug: String!) {
-      createCategory (input: {
+const CREATE_PRODUCT = `
+    mutation createProduct($name: String!, $slug: String!, $description: String!, $category: String!) {
+      createProduct (input: {
         name: $name,
-        slug: $slug
+        slug: $slug,
+        description: $description,
+        category: $category
       }) {
         id
         name
@@ -20,8 +23,17 @@ const CREATE_CATEGORY = `
       }
     }
   `
+const GET_ALL_CATEGORIES = `
+  query {
+    getAllCategories{
+      id
+      name
+      slug
+    }
+  }
+`
 
-const CategorySchema = Yup.object().shape({
+const ProductSchema = Yup.object().shape({
   name: Yup.string()
           .min(3, 'Por favor, informe pelo menos um nome com 3 caracteres.')
           .required('Por favor, informe um nome.'),
@@ -32,7 +44,7 @@ const CategorySchema = Yup.object().shape({
             const ret = await fetcher(JSON.stringify({
               query: `
                 query{
-                  getCategoryBySlug(slug:"${value}"){
+                  getProductBySlug(slug:"${value}"){
                     id
                   }
                 }
@@ -42,32 +54,52 @@ const CategorySchema = Yup.object().shape({
               return true
             }
             return false
-          })
+          }),
+    description: Yup.string()
+      .min(20, 'Por favor, informe pelo menos uma descrição com 20 caracteres.')
+      .required('Por favor, informe uma descrição.'),
+    category: Yup.string()
+        .min(1, 'Por favor, selecione uma categoria.')
+        .required('Por favor, selecione uma categoria.'),
 })
 
 const Index = () => {
   const router = useRouter()
-  const [data, createCategory] = useMutation(CREATE_CATEGORY)
+  const [data, createProduct] = useMutation(CREATE_PRODUCT)
+  const { data: categories, mutate } = useQuery(GET_ALL_CATEGORIES)
   const form = useFormik({
     initialValues: {
       name: '',
-      slug: ''
+      slug: '',
+      description: '',
+      category: ''
     },
-    validationSchema: CategorySchema,
     onSubmit: async values => {
-      const data = await createCategory(values)
+      const data = await createProduct(values)
       if(data && !data.errors){
-        router.push('/categories')
+        router.push('/products')
       }
-    }
+    },
+    validationSchema: ProductSchema
   })
+
+  // tratar os options
+  let options = []
+  if (categories && categories.getAllCategories) {
+    options = categories.getAllCategories.map(item => {
+      return {
+        id: item.id,
+        label: item.name
+      }
+    })
+  }
 
   return (
     <Layout>
-      <Title>Criar nova categoria</Title>
+      <Title>Criar novo produto</Title>
       <div className='mt-8'></div>
       <div>
-        <Button.LinkOutline href='/categories'>Voltar</Button.LinkOutline>
+        <Button.LinkOutline href='/products'>Voltar</Button.LinkOutline>
       </div>
       <div className='flex flex-col mt-8'>
         <div className='-my-2 py-2 overflow-x-auto sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8'>
@@ -78,25 +110,41 @@ const Index = () => {
             <form onSubmit={form.handleSubmit}>
               <div className='flex flex-wrap -mx-3 mb-6'>
                 <Input
-                  label='Nome da categoria'
-                  placeholder='Preencha com o nome da categoria'
+                  label='Nome do produto'
+                  placeholder='Preencha com o nome do produto'
                   value={form.values.name}
                   onChange={form.handleChange}
                   name='name'
                   errorMessage={form.errors.name}
                 />
-                
                 <Input
-                  label='Slug da categoria'
-                  placeholder='Preencha com o slug da categoria'
+                  label='Slug do produto'
+                  placeholder='Preencha com o slug do produto'
                   value={form.values.slug}
                   onChange={form.handleChange}
                   name='slug'
                   helpText='Slug é utilizado para URLs amigáveis.'
                   errorMessage={form.errors.slug}
                 />
+                <Input
+                  label='Descrição do produto'
+                  placeholder='Preencha com descrição do produto'
+                  value={form.values.description}
+                  onChange={form.handleChange}
+                  name='description'
+                  errorMessage={form.errors.description}
+                />
+                <Select
+                  label='Seleciona a categoria'
+                  name='category'
+                  onChange={form.handleChange}
+                  value={form.values.category}
+                  options={options}
+                  errorMessage={form.errors.category}
+                  initial={{ id: '', label: 'Selecione...'}}
+                />
               </div>
-              <Button>Criar categoria</Button>
+              <Button>Criar produto</Button>
             </form>
           </div>
         </div>
