@@ -13,7 +13,7 @@ let id = ''
 
 const UPDATE_PRODUCT = `
     mutation updateProduct($id: String!, $name: String!, $slug: String!, $description: String!, $category: String!) {
-      updateProduct (input: {
+      panelUpdateProduct (input: {
         id: $id,
         name: $name,
         slug: $slug,
@@ -38,35 +38,41 @@ const GET_ALL_CATEGORIES = `
 
 const ProductSchema = Yup.object().shape({
   name: Yup.string()
-          .min(3, 'Por favor, informe pelo menos um nome com 3 caracteres.')
-          .required('Por favor, informe um nome.'),
+    .min(3, 'Por favor, informe pelo menos um nome com 3 caracteres.')
+    .required('Por favor, informe um nome.'),
   slug: Yup.string()
-          .min(3, 'Por favor, informe um slug para a categoria')
-          .required('Por favor, informe um slug para a categoria.')
-          .test('is-unique', 'Por favor, utilize outro slug. Este já está em uso.', async(value) => {
-            const ret = await fetcher(JSON.stringify({
-              query: `
+    .min(3, 'Por favor, informe um slug para a categoria')
+    .required('Por favor, informe um slug para a categoria.')
+    .test(
+      'is-unique',
+      'Por favor, utilize outro slug. Este já está em uso.',
+      async value => {
+        const ret = await fetcher(
+          JSON.stringify({
+            query: `
                 query{
                   getProductBySlug(slug:"${value}"){
                     id
                   }
                 }
               `
-            }))
-            if(ret.errors){
-              return true
-            }
-            if(ret.data.getProductBySlug.id === id){
-              return true
-            }
-            return false
-          }),
-    description: Yup.string()
-      .min(20, 'Por favor, informe pelo menos uma descrição com 20 caracteres.')
-      .required('Por favor, informe uma descrição.'),
-    category: Yup.string()
-        .min(1, 'Por favor, selecione uma categoria.')
-        .required('Por favor, selecione uma categoria.'),
+          })
+        )
+        if (ret.errors) {
+          return true
+        }
+        if (ret.data.getProductBySlug.id === id) {
+          return true
+        }
+        return false
+      }
+    ),
+  description: Yup.string()
+    .min(20, 'Por favor, informe pelo menos uma descrição com 20 caracteres.')
+    .required('Por favor, informe uma descrição.'),
+  category: Yup.string()
+    .min(1, 'Por favor, selecione uma categoria.')
+    .required('Por favor, selecione uma categoria.')
 })
 
 const Edit = () => {
@@ -95,7 +101,7 @@ const Edit = () => {
         id: router.query.id
       }
       const data = await updateCategory(category)
-      if(data && !data.errors){
+      if (data && !data.errors) {
         router.push('/products')
       }
     },
@@ -128,10 +134,11 @@ const Edit = () => {
       <div className='flex flex-col mt-8'>
         <div className='-my-2 py-2 overflow-x-auto sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8'>
           <div className='align-middle inline-block min-w-full shadow bg-white p-12 overflow-hidden sm:rounded-lg border-b border-gray-200'>
-            <pre>{JSON.stringify(form, null, 2)}</pre>
-            {
-              updatedData && !!updatedData.errors && <p className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 relative'>Ocorreu um erro ao salvar os dados.</p>
-            }
+            {updatedData && !!updatedData.errors && (
+              <p className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 relative'>
+                Ocorreu um erro ao salvar os dados.
+              </p>
+            )}
             <form onSubmit={form.handleSubmit}>
               <div className='flex flex-wrap -mx-3 mb-6'>
                 <Input
@@ -165,7 +172,7 @@ const Edit = () => {
                   onChange={form.handleChange}
                   value={form.values.category}
                   options={options}
-                  initial={{ id: '', label: 'Selecione...'}}
+                  initial={{ id: '', label: 'Selecione...' }}
                   errorMessage={form.errors.category}
                 />
               </div>

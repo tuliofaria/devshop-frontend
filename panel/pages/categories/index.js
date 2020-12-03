@@ -9,7 +9,7 @@ import { useMutation, useQuery } from '../../lib/graphql'
 
 const DELETE_CATEGORY = `
 mutation deleteCategory($id: String!) {
-  deleteCategory (id: $id)
+  panelDeleteCategory (id: $id)
 }
 `
 

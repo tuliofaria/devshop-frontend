@@ -12,7 +12,7 @@ let id = ''
 
 const UPDATE_BRAND = `
     mutation updateBrand($id: String!, $name: String!, $slug: String!) {
-      updateBrand (input: {
+      panelUpdateBrand (input: {
         id: $id,
         name: $name,
         slug: $slug
@@ -23,32 +23,38 @@ const UPDATE_BRAND = `
       }
     }
   `
-  const BrandSchema = Yup.object().shape({
-    name: Yup.string()
-            .min(3, 'Por favor, informe pelo menos um nome com 3 caracteres.')
-            .required('Por favor, informe um nome.'),
-    slug: Yup.string()
-            .min(3, 'Por favor, informe um slug para a marca')
-            .required('Por favor, informe um slug para a marca.')
-            .test('is-unique', 'Por favor, utilize outro slug. Este já está em uso.', async(value) => {
-              const ret = await fetcher(JSON.stringify({
-                query: `
+const BrandSchema = Yup.object().shape({
+  name: Yup.string()
+    .min(3, 'Por favor, informe pelo menos um nome com 3 caracteres.')
+    .required('Por favor, informe um nome.'),
+  slug: Yup.string()
+    .min(3, 'Por favor, informe um slug para a marca')
+    .required('Por favor, informe um slug para a marca.')
+    .test(
+      'is-unique',
+      'Por favor, utilize outro slug. Este já está em uso.',
+      async value => {
+        const ret = await fetcher(
+          JSON.stringify({
+            query: `
                   query{
                     getBrandBySlug(slug:"${value}"){
                       id
                     }
                   }
                 `
-              }))
-              if(ret.errors){
-                return true
-              }
-              if(ret.data.getBrandBySlug.id === id){
-                return true
-              }
-              return false
-            })
-  })
+          })
+        )
+        if (ret.errors) {
+          return true
+        }
+        if (ret.data.getBrandBySlug.id === id) {
+          return true
+        }
+        return false
+      }
+    )
+})
 
 const Edit = () => {
   const router = useRouter()
@@ -74,7 +80,7 @@ const Edit = () => {
       }
 
       const data = await updateBrand(brand)
-      if(data && !data.errors){
+      if (data && !data.errors) {
         router.push('/brands')
       }
     },
@@ -94,9 +100,11 @@ const Edit = () => {
       <div className='flex flex-col mt-8'>
         <div className='-my-2 py-2 overflow-x-auto sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8'>
           <div className='align-middle inline-block min-w-full shadow bg-white p-12 overflow-hidden sm:rounded-lg border-b border-gray-200'>
-            {
-              updatedData && !!updatedData.errors && <p className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 relative'>Ocorreu um erro ao salvar os dados.</p>
-            }
+            {updatedData && !!updatedData.errors && (
+              <p className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 relative'>
+                Ocorreu um erro ao salvar os dados.
+              </p>
+            )}
             <form onSubmit={form.handleSubmit}>
               <div className='flex flex-wrap -mx-3 mb-6'>
                 <Input

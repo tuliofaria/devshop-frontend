@@ -9,7 +9,7 @@ import { useMutation, useQuery } from '../../lib/graphql'
 
 const DELETE_PRODUCT = `
 mutation deleteProduct($id: String!) {
-  deleteProduct (id: $id)
+  panelDeleteProduct (id: $id)
 }
 `
 

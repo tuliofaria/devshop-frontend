@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { useQuery, useUpload, fetcher } from '../../../lib/graphql'
+import { useQuery, useMutation, fetcher } from '../../../lib/graphql'
 import { useFormik } from 'formik'
 import Layout from '../../../components/Layout'
 import Title from '../../../components/Title'
@@ -10,49 +10,55 @@ import * as Yup from 'yup'
 
 let id = ''
 
-const UPLOAD_BRAND_LOGO = `
-    mutation uploadBrandLogo($id: String!, $file: Upload!) {
-      panelUploadBrandLogo (
+const UPDATE_USER = `
+    mutation updateUser($id: String!, $passwd: String!) {
+      panelChangeUserPass (input: {
         id: $id,
-        file: $file
-      )
+        passwd: $passwd
+      })
     }
   `
+const UserSchema = Yup.object().shape({
+  passwd: Yup.string()
+    .min(6, 'Por favor, informe pelo menos uma senha com 6 caracteres.')
+    .required('Por favor, informe uma senha.')
+})
 
-const Upload = () => {
+const Edit = () => {
   const router = useRouter()
+  id = router.query.id
   const { data } = useQuery(`
     query{
-      getBrandById(id:"${router.query.id}"){
+      panelGetUserById(id:"${router.query.id}"){
         name
-        slug
+        email
+        role
       }
     }
   `)
-  const [updatedData, updateBrand] = useUpload(UPLOAD_BRAND_LOGO)
+  const [updatedData, updateUser] = useMutation(UPDATE_USER)
   const form = useFormik({
     initialValues: {
-      id: router.query.id,
-      file: ''
+      passwd: ''
     },
     onSubmit: async values => {
-      const brand = {
+      const category = {
         ...values,
         id: router.query.id
       }
 
-      const data = await updateBrand(brand)
+      const data = await updateUser(category)
       if (data && !data.errors) {
-        router.push('/brands')
+        router.push('/users')
       }
-    }
+    },
+    validationSchema: UserSchema
   })
-
   return (
     <Layout>
       <Title>
-        Upload logo da marca:{' '}
-        {data && data.getBrandById && data.getBrandById.name}
+        Editar senha:{' '}
+        {data && data.panelGetUserById && data.panelGetUserById.name}
       </Title>
       <div className='mt-8'></div>
       <div className='flex flex-col mt-8'>
@@ -65,15 +71,16 @@ const Upload = () => {
             )}
             <form onSubmit={form.handleSubmit}>
               <div className='flex flex-wrap -mx-3 mb-6'>
-                <input
-                  type='file'
-                  name='file'
-                  onChange={evt => {
-                    form.setFieldValue('file', evt.currentTarget.files[0])
-                  }}
+                <Input
+                  label='Nova senha'
+                  placeholder='Preencha com a senha'
+                  value={form.values.passwd}
+                  onChange={form.handleChange}
+                  name='passwd'
+                  errorMessage={form.errors.passwd}
                 />
               </div>
-              <Button>Salvar marca</Button>
+              <Button>Salvar nova senha</Button>
             </form>
           </div>
         </div>
@@ -81,4 +88,4 @@ const Upload = () => {
     </Layout>
   )
 }
-export default Upload
+export default Edit

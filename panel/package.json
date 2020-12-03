@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "date-fns": "^2.16.1",
     "formik": "^2.1.5",
     "next": "^9.5.3",
     "react": "^16.13.1",

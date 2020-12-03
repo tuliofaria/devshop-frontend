@@ -10,45 +10,47 @@ import * as Yup from 'yup'
 
 let id = ''
 
-const UPDATE_CATEGORY = `
-    mutation updateCategory($id: String!, $name: String!, $slug: String!) {
-      panelUpdateCategory (input: {
+const UPDATE_USER = `
+    mutation updateUser($id: String!, $name: String!, $email: String!, $role: String!) {
+      panelUpdateUser (input: {
         id: $id,
         name: $name,
-        slug: $slug
+        email: $email,
+        role: $role
       }) {
         id
         name
-        slug
+        email
       }
     }
   `
-const CategorySchema = Yup.object().shape({
+const UserSchema = Yup.object().shape({
   name: Yup.string()
     .min(3, 'Por favor, informe pelo menos um nome com 3 caracteres.')
     .required('Por favor, informe um nome.'),
-  slug: Yup.string()
-    .min(3, 'Por favor, informe um slug para a categoria')
-    .required('Por favor, informe um slug para a categoria.')
+  email: Yup.string()
+    .email()
+    .min(3, 'Por favor, informe pelo menos um email com 3 caracteres.')
+    .required('Por favor, informe email.')
     .test(
       'is-unique',
-      'Por favor, utilize outro slug. Este já está em uso.',
+      'Por favor, utilize outro email. Este já está em uso por outro usuário.',
       async value => {
         const ret = await fetcher(
           JSON.stringify({
             query: `
-                  query{
-                    getCategoryBySlug(slug:"${value}"){
-                      id
-                    }
+                query{
+                  panelGetUserByEmail(email:"${value}"){
+                    id
                   }
-                `
+                }
+              `
           })
         )
         if (ret.errors) {
           return true
         }
-        if (ret.data.getCategoryBySlug.id === id) {
+        if (ret.data.panelGetUserByEmail.id === id) {
           return true
         }
         return false
@@ -61,17 +63,19 @@ const Edit = () => {
   id = router.query.id
   const { data } = useQuery(`
     query{
-      getCategoryById(id:"${router.query.id}"){
+      panelGetUserById(id:"${router.query.id}"){
         name
-        slug
+        email
+        role
       }
     }
   `)
-  const [updatedData, updateCategory] = useMutation(UPDATE_CATEGORY)
+  const [updatedData, updateUser] = useMutation(UPDATE_USER)
   const form = useFormik({
     initialValues: {
       name: '',
-      slug: ''
+      email: '',
+      role: ''
     },
     onSubmit: async values => {
       const category = {
@@ -79,23 +83,24 @@ const Edit = () => {
         id: router.query.id
       }
 
-      const data = await updateCategory(category)
+      const data = await updateUser(category)
       if (data && !data.errors) {
-        router.push('/categories')
+        router.push('/users')
       }
     },
-    validationSchema: CategorySchema
+    validationSchema: UserSchema
   })
   // passou os dados pro form
   useEffect(() => {
-    if (data && data.getCategoryById) {
-      form.setFieldValue('name', data.getCategoryById.name)
-      form.setFieldValue('slug', data.getCategoryById.slug)
+    if (data && data.panelGetUserById) {
+      form.setFieldValue('name', data.panelGetUserById.name)
+      form.setFieldValue('email', data.panelGetUserById.email)
+      form.setFieldValue('role', data.panelGetUserById.role)
     }
   }, [data])
   return (
     <Layout>
-      <Title>Editar categoria</Title>
+      <Title>Editar usuário</Title>
       <div className='mt-8'></div>
       <div className='flex flex-col mt-8'>
         <div className='-my-2 py-2 overflow-x-auto sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8'>
@@ -108,24 +113,32 @@ const Edit = () => {
             <form onSubmit={form.handleSubmit}>
               <div className='flex flex-wrap -mx-3 mb-6'>
                 <Input
-                  label='Nome da categoria'
-                  placeholder='Preencha com o nome da categoria'
+                  label='Nome'
+                  placeholder='Preencha com o nome'
                   value={form.values.name}
                   onChange={form.handleChange}
                   name='name'
                   errorMessage={form.errors.name}
                 />
+
                 <Input
-                  label='Slug da categoria'
-                  placeholder='Preencha com o slug da categoria'
-                  value={form.values.slug}
+                  label='Email'
+                  placeholder='Preencha com o email'
+                  value={form.values.email}
                   onChange={form.handleChange}
-                  name='slug'
-                  helpText='Slug é utilizado para URLs amigáveis.'
-                  errorMessage={form.errors.slug}
+                  name='email'
+                  errorMessage={form.errors.email}
+                />
+                <Input
+                  label='Role'
+                  placeholder='Preencha com o role'
+                  value={form.values.role}
+                  onChange={form.handleChange}
+                  name='role'
+                  errorMessage={form.errors.role}
                 />
               </div>
-              <Button>Salvar categoria</Button>
+              <Button>Salvar usuário</Button>
             </form>
           </div>
         </div>
